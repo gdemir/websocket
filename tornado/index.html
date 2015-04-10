@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+</head>
+<body>
+
+<div style="height:400px;">
+
+	<div style="float:left;width:150px;">
+	<ul class="users">
+
+	</ul>
+	</div>
+	<div style="float:left;margin-left:40px;width:400px;">
+	<ul class="messages">
+
+	</ul>
+	</div>
+</div>
+
+<form action="" id="form-message">
+	<input type="text" id="input-message-body">
+</form>
+
+<button class="btn-logout">Çıkış</button>
+
+	<script type="text/javascript">
+
+	function guid() {
+		function s4() {
+			return Math.floor((1 + Math.random()) * 0x10000)
+			.toString(16)
+			.substring(1);
+		}
+		return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+		s4() + '-' + s4() + s4() + s4();
+	}
+	var username = guid();
+	//console.log(username);
+
+	var ws = new WebSocket("ws://localhost:8888/websocket?id=" + username );
+
+	ws.onopen = function() {
+		// ws.send(JSON.stringify(j));
+	};
+	ws.onmessage = function (evt) {
+		// console.log(evt);
+		// main.py dosyasındaki on_message() fonskiyonunda write_messages() fonksiyonun yolladığı veriyi json'dan dict'e çevir: DICT
+		var receivedData = $.parseJSON(evt.data);
+
+		if (receivedData.type=="new_message") {
+			var html = "<li><span style='color:red;'>" + receivedData.user_id + "</span> : " + receivedData.message_body + "</li>";
+			$(".messages").append(html)
+		}else if(receivedData.type=="new_user"){
+			var html = "<li id='"+receivedData.user_id+"'><span style='color:blue;'>" + receivedData.user_id + "</span></li>";
+			$(".users").append(html)
+		}else if(receivedData.type=="user_list"){
+			$.each(receivedData.users_ids, function(index, userId) {
+				var html = "<li id='"+receivedData.user_id+"'><span style='color:blue;'>" + userId + "</span></li>";
+				$(".users").append(html)
+			});
+		}else if(receivedData.type=="user_logout"){
+			$(".users").find("#" + receivedData.user_id).fadeOut("slow")
+		}
+	};
+	ws.onclose = function() {
+
+	};
+	
+	$(function() {
+
+		$("#form-message").on("submit", function () {
+
+			var messageBody = $("#input-message-body").val();
+
+			var sendMessage = { "message_body" : messageBody }
+			// console.log(JSON.stringify(sendMessage));
+			// console.log(messageBody);
+			ws.send(JSON.stringify(sendMessage));
+
+			$("#input-message-body").val("");
+			return false;
+		});
+
+		$(".btn-logout").on("click",function () {
+			ws.close();
+		})
+	});
+	</script>
+
+</body>
+</html>
+
