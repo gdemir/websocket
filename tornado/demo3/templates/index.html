@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+
+</head>
+<body>
+
+<div class="well" style="height:400px;">
+	
+	<div style="float:left;width:150px;">
+		<ul class="users">
+
+		</ul>
+	</div>
+	<div style="float:left;margin-left:40px;width:400px;">
+		<div class="info">
+			Gönderen: <code>{{ id }}</code>
+		</div>
+		<ul class="messages">
+
+		</ul>
+	</div>
+	
+</div>
+
+<form action="" id="form-message">
+	<input type="text" id="input-message-body">
+</form>
+
+<button class="btn-logout">Çıkış</button>
+
+	<script type="text/javascript">
+
+	function guid() {
+		function s4() {
+			return Math.floor((1 + Math.random()) * 0x10000)
+			.toString(16)
+			.substring(1);
+		}
+		return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+		s4() + '-' + s4() + s4() + s4();
+	}
+	var id = "{{ id }}";
+	var receive_id;
+
+	var ws = new WebSocket("ws://localhost:8888/websocket?id=" + id );
+
+	ws.onopen = function() {
+		// ws.send(JSON.stringify(j));
+	};
+	ws.onmessage = function (evt) {
+		// console.log(evt);
+		// main.py dosyasindaki on_message() fonskiyonunda write_messages() fonksiyonun yolladigi veriyi json'dan dict'e cevir: DICT
+		var data = $.parseJSON(evt.data);
+		console.log(data);
+		if (data.type=="new_message") {
+			var html = "<li><span style='color:red;'>" + data.id + "</span> : " + data.message_body + "</li>";
+			$(".messages").append(html);
+		} else if(data.type == "new_user") {
+			var html = "<li data-id='"+data.id+"'><span style='color:blue;'>" + data.id + "</span></li>";
+			$(".users").append(html);
+		} else if(data.type == "user_list") {
+			$.each(data.user_ids, function(index, user_id) {
+				var html = "<li data-id='" + user_id + "'><span style='color:blue;'>" + user_id + "</span></li>";
+				$(".users").append(html);
+			});
+		} else if(data.type == "user_logout") {
+			$(".users").find("li[data-id=" + data.id + "]").fadeOut("slow");
+		}
+	};
+	ws.onclose = function() {
+
+	};
+	
+	//$(function() {
+	$(document).ready(function() {
+
+		$("#form-message").on("submit", function () {
+
+			var messageBody = $("#input-message-body").val();
+
+			var sendMessage = { "type" : "new_message", "message_body" : messageBody, "receive_id" : receive_id }
+			// console.log(JSON.stringify(sendMessage));
+			//console.log(sendMessage);
+			ws.send(JSON.stringify(sendMessage));
+
+			$("#input-message-body").val("");
+			return false;
+		});
+
+		$('.users').on('click', "li", function () {
+			receive_id = $(this).attr("data-id");
+
+			$(".info").append("Alıcı:<code>" + receive_id + "</code>")
+		})
+		$(".btn-logout").on("click",function () {
+			ws.close();
+		})
+	});
+	</script>
+
+</body>
+</html>
+
+
