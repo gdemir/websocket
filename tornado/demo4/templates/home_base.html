@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="tr" lang="tr">
+	{% include "_header.html" %}
+<body>
+{% include "_home_navbar.html" %}
+<div class="container">
+	<div class="well">
+		<div class="row">
+			<div class="jumbotron">
+				<h1> MAIL System </h1>
+				<p> Hızlı ve Güvenli Anlık Mail Sistemi </p>
+			</div>
+
+			<hr>
+
+			{% include "_notice.html" %}
+			<div class="col-xs-8 col-md-8">
+
+				<h4>Mail System Nedir?</h4>
+				 Mail System, User Giriş Paneli ile anlık mail atma imkanı sağlar. Her kullanıcı mail atabilir ve herkesten gelen mailleri onaylabilir.
+				 Kullanıcılar (<p class="label label-success">online</p> veya <p class="label label-danger">offlline</p>) olarak gösterilmektedir.
+
+				<h4>User Giriş Paneli Nedir?</h4>
+				 Mail System sayfasının sağ üst köşesinden Giriş Yap kısmından giriş yapılır. Bu panele giren anlık mail alma ve gönderme işlemi yapabilme yetkisine sahip olmuştur.
+
+			</div>
+			<div class="col-xs-4 col-md-4">
+				{% block body %}{% end %}
+			</div>
+		</div>
+	{% include "_signup_modal.html" %}
+	{% include "_signin_modal.html" %}
+	
+</div>
+{% include "_footer.html" %}
+</body>
+</html>

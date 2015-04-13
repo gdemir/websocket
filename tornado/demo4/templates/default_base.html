@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="tr" lang="tr">
+	{% include "_header.html" %}
+<body>
+<div class="container" style="margin-top: 8%;min-height: 200px;width: 400px;">
+	{% include "_notice.html" %}
+	<div class="panel panel-default" >
+		<div class="panel-heading">
+			<h3 class="panel-title">Giriş</h3>
+		</div>
+		<div class="panel-body">
+			{% block body %}{% end %}
+  		</div>
+		<div class="panel-footer">Copyright 2015</div>
+	</div>
+</div>
+</body>
+</html>

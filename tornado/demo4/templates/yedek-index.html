@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="tr" lang="tr">
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<link href='http://fonts.googleapis.com/css?family=Monda' rel='stylesheet' type='text/css'>
+		<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!--[if lt IE 9]>
+		<script src="{{ static_url("js/html5shiv.js") }}></script>
+		<script src="{{ static_url("js/respond.min.js") }}></script>
+		<![endif]-->
+		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+		<link rel="stylesheet" href="{{ static_url("css/syntax.css") }}" type="text/css"/>
+		<script src="{{ static_url("js/bootstrap.min.js") }}"></script>
+	</head>
+<body>
+
+<!-- navbar start -->
+<nav class="navbar navbar-default">
+	<div class="container-fluid">
+		<!-- Brand and toggle get grouped for better mobile display -->
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href="#">MAIL</a>
+		</div>
+
+		<!-- Collect the nav links, forms, and other content for toggling -->
+		<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+			<ul class="nav navbar-nav navbar-right">
+				<li class="dropdown">
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">{{ login['full_name'] }}</a>
+					<ul class="dropdown-menu" role="menu">
+						<li><a href="" id="logout">Çıkış</a></li>
+					</ul>
+				</li>
+			</ul>
+		</div>
+
+	</div><!-- /.container-fluid -->
+</nav>
+<!-- navbar end -->
+
+<!-- container start -->
+ <div class="container">
+ 	<!-- row start -->
+ 	<div class="row">
+
+		<div class="col-xs-4 col-md-4">
+				
+			<div class="panel panel-default">
+				<div class="panel-heading">Kullanıcı</div>
+				<div class="panel-body">
+					{{ login['full_name'] }}
+					<div id="receive"></div>
+				</div>
+			</div>
+
+			<div class="panel panel-default">
+				<div class="panel-heading">Kullanıcılar</div>
+				<div class="panel-body">
+					<ul class="nav nav-pills nav-stacked" id="users">
+						{% for user in login['users'] %}
+							<li receive-id="{{ user['id'] }}" receive-full-name="{{ user['full_name'] }}"><a href="#">{{ user['full_name'] }}</a></li>
+						{% end %}
+					</ul>
+				</div>
+			</div>
+
+		</div>
+		<div class="col-xs-8 col-md-8">
+
+			<div class="panel panel-default">
+			<div class="panel-heading">Mesajlar</div>
+				<div class="panel-body">
+					<div id="messages"></div>
+					<form action="" id="new-message">
+						<div class="input-group">
+							<input type="text" class="form-control" placeholder="Bir şeyler yazmak istersin belki ?" id="input-message-body">
+							<span class="input-group-btn">
+								<button class="btn btn-default" type="submit">Yaz!</button>
+							</span>
+						</div><!-- /input-group -->
+					</form>
+				</div>
+			</div>
+
+		</div>
+
+	</div>
+	<!-- row end -->
+
+	<!-- Footer start -->
+	<div class="well">
+		Aksi belirtilmedikçe <a href="http://gdemir.me">Gökhan Demir</a> tarafından tüm içerik hakları saklıdır.
+		<span class="pull-right">Copyright 2015</span>
+	</div>
+	<!-- Footer end -->
+
+</div>
+<!-- container end -->
+
+	<script type="text/javascript">
+
+	function message_left(user, message, mail_id) {
+		return "<div class='well well-sm'> \
+				     <blockquote> \
+				      <p class='text-success'>" + user + "</p> \
+				      <footer>" + message + "</footer> \
+				    </blockquote> \
+				    	<a  mail-id=" + mail_id+ " class='btn btn-danger'>Sil</a>\
+				</div>";
+	}
+	function message_right(user, message) {
+		return "<div class='well well-sm'> \
+				     <blockquote class='blockquote-reverse'> \
+				      <p class='text-danger'>" + user + "</p> \
+				      <footer>" + message + "</footer> \
+				    </blockquote> \
+				</div>";
+	}
+	var full_name = "{{ login['full_name'] }}";
+	var id = "{{ login['id'] }}";
+	var receive_id;
+
+	var ws = new WebSocket("ws://localhost:8888/websocket?id=" + id );
+
+	ws.onopen = function() {
+		// ws.send(JSON.stringify(j));
+	};
+	ws.onmessage = function (evt) {
+		// console.log(evt);
+		// main.py dosyasindaki on_message() fonskiyonunda write_messages() fonksiyonun yolladigi veriyi json'dan dict'e cevir: DICT
+		var data = $.parseJSON(evt.data);
+		console.log(data);
+		if (data.type == "new_message") {
+			console.log(data["sender_id"] + " -> "  + data["receive_id"] + " x " + receive_id);
+			if (receive_id && ((receive_id == data["receive_id"]) || (receive_id == data["sender_id"]))) {
+				if (id == data.sender_id)
+					$("#messages").append(message_left(data["sender_full_name"], data["message_body"], data["mail_id"]));
+				else if (id == data.receive_id)
+					$("#messages").append(message_right(data["receive_full_name"], data["message_body"]));
+			} else 
+				alert("Yeni mesaj:" + data["sender_full_name"]);
+
+		} else if (data.type == "new_user") {
+			$("#users").find("li[receive-id=" + data.id + "]").find("a").find("span").replaceWith("<span class='text-success pull-right'>online</span>");
+			/*
+			$("#users").find("li[receive-id=" + data.id + "]").find("a").find("span").remove();
+			$("#users").find("li[receive-id=" + data.id + "]").find("a").append("<span class='text-success pull-right'>online</span>");
+			*/
+		} else if (data.type == "user_list") {
+			
+			$("#users").find("li").find("a").append("<span class='text-danger pull-right'>offline</span>");
+			
+			$.each(data.user_ids, function(index, user_id) {
+				/*
+				$("#users").find("li[receive-id=" + user_id + "]").find("a").find("span").remove();
+				$("#users").find("li[receive-id=" + user_id + "]").find("a").append("<span class='text-success pull-right'>online</span>");
+				*/
+				$("#users").find("li[receive-id=" + user_id + "]").find("a").find("span").replaceWith("<span class='text-success pull-right'>online</span>");
+			});
+		} else if (data.type == "user_logout") {
+			/*
+			$("#users").find("li[receive-id=" + data.id + "]").find("a").find("span").remove();
+			$("#users").find("li[receive-id=" + data.id + "]").find("a").append("<span class='text-danger pull-right'>offline</span>");
+			*/
+			$("#users").find("li[receive-id=" + data.id + "]").find("a").find("span").replaceWith("<span class='text-danger pull-right'>offline</span>");
+		} else if (data.type == "load_message") {
+			if (receive && ((receive_id == data["receive_id"]) || (receive_id == data["sender_id"]))) {
+				$("#messages").empty();
+				$.each(data.messages, function(index, message) {
+					if (id == message["sender_id"])
+						$("#messages").append(message_left(message["sender_full_name"], message["body"], message["mail_id"]));
+					else if (id == message["receive_id"])
+						$("#messages").append(message_right(message["sender_full_name"], message["body"]));
+				});
+			}
+		}
+	};
+	ws.onclose = function() {
+
+	};
+	
+	$(document).ready(function() {
+		// ADD new message
+		$("#new-message").on("submit", function () {
+			if (!receive_id) {
+				alert("lütfen bir kullanıcı seçin");
+				return false;
+			}
+			receive_full_name = $("#users").find("li[receive-id=" + receive_id + "]").attr("receive-full-name");
+			messageBody = $("#input-message-body").val();
+			sendMessage = {
+								"type" : "new_message", 
+								"sender_id" : id,
+								"receive_id" : receive_id,
+								"sender_full_name" : full_name,
+								"receive_full_name" : receive_full_name,
+								"message_body" : messageBody,
+							}
+			//console.log(sendMessage);
+			ws.send(JSON.stringify(sendMessage));
+			$("#input-message-body").val("");
+			return false;
+		});
+
+		//  REMOVE and LOAD message 
+		$("#messages").on("click", "a", function () {
+			mail_id = $(this).attr("mail-id");
+			sendMessage = {
+								"type" : "del_message", 
+								"mail_id" : mail_id,
+								"sender_id" : id,
+								"receive_id" : receive_id,
+								"limit" : 10,
+								}
+			ws.send(JSON.stringify(sendMessage));
+			return false;
+		});
+
+		// GET MESSAGES on database
+		$("#users").on("click", "li", function () {
+			receive_id = $(this).attr("receive-id");
+			//receive_id = $(this).data("receive-id");
+			console.log(receive_id);
+			$("#receive").empty().append("Alıcı:<code>" + receive_id + "</code>");
+			$("#users").find("li").removeClass("active");
+			$("#users").find("li[receive-id=" + receive_id + "]").addClass("active");
+			sendMessage = {
+								"type" : "load_message", 
+								"sender_id" : id,
+								"receive_id" : receive_id,
+								"limit" : 10,
+								}
+			ws.send(JSON.stringify(sendMessage));
+			return false;
+		})
+		$("#logout").on("click",function () {
+			ws.close();
+		})
+	});
+	</script>
+
+</body>
+</html>
+
+
+

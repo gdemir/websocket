@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="tr" lang="tr">
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<link href='http://fonts.googleapis.com/css?family=Monda' rel='stylesheet' type='text/css'>
+		<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!--[if lt IE 9]>
+		<script src="{{ static_url("js/html5shiv.js") }}></script>
+		<script src="{{ static_url("js/respond.min.js") }}></script>
+		<![endif]-->
+		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+		<link rel="stylesheet" href="{{ static_url("css/syntax.css") }}" type="text/css"/>
+		<script src="{{ static_url("js/bootstrap.min.js") }}"></script>
+<body>
+<div class="container" style="margin-top: 8%;min-height: 200px;width: 400px;">
+	{% if error %}
+		<span style="color: red">Error: {{ error }}</span><p>
+	{% end %}
+	<div class="panel panel-default" >
+		<div class="panel-heading">
+			<h3 class="panel-title">Giriş</h3>
+		</div>
+		<div class="panel-body">
+			<form action="/login" method="post" id="messageform">
+				<input name="username" id="username" class="form-control" placeholder="Kullanıcı Adı"/>
+				<input name="password" id="password" class="form-control" placeholder="Parola"/>
+				<p style="padding-left:5px">
+					<input type="submit" value="Giriş" class="btn btn-primary"/>
+					<input type="hidden" name="next" value="{{ request.path }}"/>
+					{% module xsrf_form_html() %}
+				</p>
+			</form>
+  		</div>
+		<div class="panel-footer">Copyright 2015</div>
+	</div>
+</div>
+</body>
+</html>

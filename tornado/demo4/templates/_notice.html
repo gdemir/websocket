@@ -1,0 +1,15 @@
+{% try %}
+	{% if "success" in notice %}
+		<div class="alert alert-success" role="alert">{{ notice["success"] }}</div>
+	{% end %}
+	{% if  "danger" in notice %}
+		<div class="alert alert-danger" role="alert">{{ notice["danger"] }}</div>
+	{% end %}
+	{% if  "warning" in notice %}
+		<div class="alert alert-warning" role="alert">{{ notice["warning"] }}</div>
+	{% end %}
+	{% if  "info" in notice %}
+		<div class="alert alert-info" role="alert">{{ notice["info"] }}</div> 
+	{% end %}
+{% except %}
+{% end %}

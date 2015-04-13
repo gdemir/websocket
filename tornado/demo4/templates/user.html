@@ -1,0 +1,241 @@
+{% extends "user_base.html" %}
+
+{% block body %}
+
+	<!-- row start -->
+	<div class="row">
+
+	<div class="col-xs-4 col-md-4">
+			
+		<div class="panel panel-default">
+			<div class="panel-heading">Kullanıcı</div>
+			<div class="panel-body">
+				{{ login['full_name'] }}
+				<div id="receive"></div>
+			</div>
+		</div>
+
+		<div class="panel panel-default">
+			<div class="panel-heading">Kullanıcılar</div>
+			<div class="panel-body">
+				<ul class="nav nav-pills nav-stacked" id="users">
+					{% for user in login['users'] %}
+						<li receive-id="{{ user['id'] }}" receive-full-name="{{ user['full_name'] }}">
+							<a href="#">{{ user['full_name'] }}</a>
+						</li>
+					{% end %}
+				</ul>
+			</div>
+		</div>
+
+	</div>
+	<div class="col-xs-8 col-md-8">
+
+		<div class="panel panel-default">
+		<div class="panel-heading">Mesajlar</div>
+			<div class="panel-body">
+				<hr>
+				<button  id="more-message" class="fa fa-chevron-up fa-2x"></button>
+				<hr>
+				<div id="messages"></div>
+				<form action="" id="new-message">
+					<div id="info-message" class="text-success">Writing...</div>
+					<textarea type="text" class="form-control" placeholder="Yazsam ?" id="input-message-body"></textarea>
+					<input type="submit" value="Gönder" class="btn btn-default pull-right">
+				</form>
+			</div>
+		</div>
+
+	</div>
+
+</div>
+<!-- row end -->
+
+	
+<!-- container end -->
+
+	<script type="text/javascript">
+
+	function message_left(user, message) {
+		return "<div class='well well-sm'> \
+				<blockquote> \
+					<p class='text-success'>" + user + "</p> \
+					<footer>" + message + "</footer> \
+				</blockquote> \
+			</div>";
+	}
+	function message_right(user, message, mail_id) {
+		return "<div class='well well-sm'> \
+				<a  mail-id=" + mail_id+ " class='fa fa-trash-o fa-2x'></a>\
+				<blockquote class='blockquote-reverse'> \
+					<p class='text-danger'>" + user + "</p> \
+					<footer>" + message + "</footer> \
+				</blockquote> \
+			</div>";
+	}
+	var full_name = "{{ login['full_name'] }}";
+	var id = "{{ login['id'] }}";
+	var receive_id;
+	var message_init = 5;
+	var message_limit = 5;
+
+	var ws = new WebSocket("ws://localhost:8888/websocket?id=" + id );
+
+	ws.onopen = function() {
+		// ws.send(JSON.stringify(j));
+	};
+	ws.onmessage = function (evt) {
+		// console.log(evt);
+		// main.py dosyasindaki on_message() fonskiyonunda write_messages() fonksiyonun yolladigi veriyi json'dan dict'e cevir: DICT
+		var data = $.parseJSON(evt.data);
+		if (data.type == "new_message") {
+			if (receive_id && ((receive_id == data["receive_id"]) || (receive_id == data["sender_id"]))) {
+				if (id == data.sender_id)
+					$("#messages").append(message_right(data["sender_full_name"], data["message_body"], data["mail_id"])).fadeIn("slow");
+				else if (id == data.receive_id)
+					$("#messages").append(message_left(data["receive_full_name"], data["message_body"])).fadeIn("slow");
+			} else 
+				alert("Yeni mesaj:" + data["sender_full_name"]);
+
+		} else if (data.type == "new_user") {
+			$("#users").find("li[receive-id=" + data.id + "]").find("a").find("span").replaceWith("<span class='text-success pull-right'>online</span>");
+			/*
+			$("#users").find("li[receive-id=" + data.id + "]").find("a").find("span").remove();
+			$("#users").find("li[receive-id=" + data.id + "]").find("a").append("<span class='text-success pull-right'>online</span>");
+			*/
+		} else if (data.type == "user_list") {
+			
+			$("#users").find("li").find("a").append("<span class='text-danger pull-right'>offline</span>");
+			
+			$.each(data.user_ids, function(index, user_id) {
+				/*
+				$("#users").find("li[receive-id=" + user_id + "]").find("a").find("span").remove();
+				$("#users").find("li[receive-id=" + user_id + "]").find("a").append("<span class='text-success pull-right'>online</span>");
+				*/
+				$("#users").find("li[receive-id=" + user_id + "]").find("a").find("span").replaceWith("<span class='text-success pull-right'>online</span>");
+			});
+		} else if (data.type == "user_logout") {
+			/*
+			$("#users").find("li[receive-id=" + data.id + "]").find("a").find("span").remove();
+			$("#users").find("li[receive-id=" + data.id + "]").find("a").append("<span class='text-danger pull-right'>offline</span>");
+			*/
+			$("#users").find("li[receive-id=" + data.id + "]").find("a").find("span").replaceWith("<span class='text-danger pull-right'>offline</span>").fadeOut("slow");
+		} else if (data.type == "load_message") {
+			if (receive_id && ((receive_id == data["receive_id"]) || (receive_id == data["sender_id"]))) {
+				$("#messages").empty();
+				$.each(data.messages, function(index, message) {
+					if (id == message["sender_id"])
+						$("#messages").prepend(message_right(message["sender_full_name"], message["body"], message["mail_id"]));
+					else if (id == message["receive_id"])
+						$("#messages").prepend(message_left(message["sender_full_name"], message["body"]));
+				});
+			}
+		} else if (data.type == "info_message") {
+			console.log(receive_id + "-> " + id);
+			if (receive_id && (receive_id == data["sender_id"])) {
+				$("#info-message").show();
+				setTimeout(function() {    $("#info-message").hide().fadeOut("slow");}, 3000);
+			}
+		}
+	};
+	ws.onclose = function() {
+
+	};
+	
+	$(document).ready(function() {
+		// writing message hide
+		/*
+		$("#message-info").hide();
+		$("#input-message-body").on("click", function() {
+			sendMessage = { "type" : "message-info", }
+			$("#message-info").show();
+			setTimeout(function() {    $("#message-info").hide().fadeOut("slow");}, 3000);
+		});*/
+		$("#info-message").hide();
+		$("#input-message-body").on("keyup", function() {
+			console.log("tıklanıldı");
+			if (receive_id) {
+				sendMessage = {
+									"type" : "info_message",
+									"sender_id" : id,
+									"receive_id" : receive_id,
+								}
+				ws.send(JSON.stringify(sendMessage));
+			}
+			return false;
+		});
+		// ADD new message
+		$("#new-message").on("submit", function () {
+			if (!receive_id) {
+				alert("lütfen bir kullanıcı seçin");
+				return false;
+			}
+			receive_full_name = $("#users").find("li[receive-id=" + receive_id + "]").attr("receive-full-name");
+			messageBody = $("#input-message-body").val();
+			sendMessage = {
+						"type" : "new_message", 
+						"sender_id" : id,
+						"receive_id" : receive_id,
+						"sender_full_name" : full_name,
+						"receive_full_name" : receive_full_name,
+						"message_body" : messageBody,
+					}
+			ws.send(JSON.stringify(sendMessage));
+			$("#input-message-body").val("");
+			return false;
+		});
+
+		//  REMOVE and LOAD message 
+		$("#messages").on("click", "a", function () {
+			mail_id = $(this).attr("mail-id");
+			sendMessage = {
+						"type" : "del_message", 
+						"mail_id" : mail_id,
+						"sender_id" : id,
+						"receive_id" : receive_id,
+						"limit" : message_limit,
+					}
+			ws.send(JSON.stringify(sendMessage));
+			return false;
+		});
+
+		// LOAD MORE  MESSAGE on database
+		$("#more-message").on("click",  function () {
+			message_limit += message_limit;
+			sendMessage = {
+						"type" : "load_message", 
+						"sender_id" : id,
+						"receive_id" : receive_id,
+						"limit" : message_limit,
+					}
+			ws.send(JSON.stringify(sendMessage));
+			return false;
+		});
+
+		// GET MESSAGES on database
+		$("#users").on("click", "li", function () {
+			// mesaj limiti sifirla
+			message_limit = message_init;
+			receive_id = $(this).attr("receive-id");
+			$("#receive").empty().append("Alıcı:<code>" + receive_id + "</code>");
+			$("#users").find("li").removeClass("active");
+			$("#users").find("li[receive-id=" + receive_id + "]").addClass("active");
+			sendMessage = {
+						"type" : "load_message", 
+						"sender_id" : id,
+						"receive_id" : receive_id,
+						"limit" : message_limit,
+					}
+			ws.send(JSON.stringify(sendMessage));
+			return false;
+		})
+
+
+
+		$("#logout").on("click",function () {
+			ws.close();
+		})
+	});
+	</script>
+
+{% end %}
