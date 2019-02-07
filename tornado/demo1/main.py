@@ -17,16 +17,16 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         self.id = self.get_argument("id")
         clients[self.id] = { "id" : self.id, "self" : self }
 
-		# yeni baglanti yapan cliente önceki user verilerini usersIds dictine yükle
+        # yeni baglanti yapan cliente önceki user verilerini usersIds dictine yükle
         usersIds = []
         for key, client in clients.iteritems():
             usersIds.append(client["id"])
 
-		# yeni baglanti yapan cliente önceki user verilerini yolla dicten jsona cevir -> JSON
+        # yeni baglanti yapan cliente önceki user verilerini yolla dicten jsona cevir -> JSON
         sendMessage = json.dumps({ "type" : "user_list" , "users_ids" : usersIds })
         self.write_message(sendMessage)
 
-	    # yeni baglanan clienti tüm bagli clientlere göstermek icin dict'ten jsona cevir -> JSON
+	# yeni baglanan clienti tüm bagli clientlere göstermek icin dict'ten jsona cevir -> JSON
         sendMessage = json.dumps({ "type" : "new_user" , "user_id" : self.id })
 
         # yeni baglanan clienti kendisi haric bagli olan clientlere göstermek yolla
@@ -35,13 +35,13 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                 client["self"].write_message(sendMessage)
 
     def on_message(self, receivedData):
-		#  index.html'deki .send() fonksiyonundan gelen mesaji json mesaji dicte cevir -> DICT
+        #  index.html'deki .send() fonksiyonundan gelen mesaji json mesaji dicte cevir -> DICT
         jsonData = json.loads(receivedData);
         
-		# kendi user_id'sini ve mesaj metni göndermek icin dict'ten jsona cevir -> JSON
+        # kendi user_id'sini ve mesaj metni göndermek icin dict'ten jsona cevir -> JSON
         sendMessage = json.dumps({ "type" : "new_message", "message_body" : jsonData["message_body"], "user_id" : str(self.id) }) 
 
-		# tüm istemcilere bu mesajı yolla #TODO sadece bazılarına basılacak
+        # tüm istemcilere bu mesajı yolla #TODO sadece bazılarına basılacak
         for key, client in clients.iteritems(): 
             client["self"].write_message(sendMessage)
 
